@@ -48,9 +48,10 @@ Daz Studio / Blender / Custom FBX / MetaHuman-compatible assets
 ## Core goals
 
 ### Character import
-- Skeletal mesh import pipeline
+- Skeletal mesh FBX import pipeline
 - Source-profile detection
-- Morph-target preservation and Daz morph manifest
+- Automatic Unreal Morph Target import
+- Daz morph manifest persisted on the imported Skeletal Mesh
 - JCM / joint-driven morph metadata preservation
 - Character metadata and validation
 - Extensible adapter interface for multiple DCC sources
@@ -113,8 +114,10 @@ BDFR_CharacterBridge
 |   +-- ARKit Mapping
 |
 +-- Editor
-    +-- Character Import Wizard
-    +-- Validation Report
+    +-- FBX Character Importer
+    +-- Morph Validation
+    +-- Character Import Wizard      [planned]
+    +-- Retarget Asset Generator     [planned]
 ```
 
 More detail: [Architecture](Docs/Architecture.md)
@@ -161,6 +164,9 @@ BDFR_CharacterBridge/
         +-- BDFR_CharacterBridge.uplugin
         +-- Source/
             +-- BDFR_CharacterBridge/
+            |   +-- Public/
+            |   +-- Private/
+            +-- BDFR_CharacterBridgeEditor/
                 +-- Public/
                 +-- Private/
 ```
@@ -196,7 +202,8 @@ BDFR_CharacterBridge/
 - [x] Daz morph manifest / DTU parsing
 - [x] morph-name normalization and semantic classification
 - [x] JCM JointLinks metadata preservation
-- [ ] editor-side FBX morph import integration
+- [x] editor-side FBX morph import integration
+- [x] imported morph validation + persistent asset metadata
 - [ ] facial expression transfer mapping
 - [ ] ARKit mapping
 - [ ] facial validation
@@ -208,7 +215,7 @@ BDFR_CharacterBridge/
 - [ ] StrandFX integration
 - [ ] runtime character hooks
 
-See the full [Roadmap](Docs/Roadmap.md) and [Morph Target Transfer](Docs/MorphTargetTransfer.md).
+See the full [Roadmap](Docs/Roadmap.md), [Morph Target Transfer](Docs/MorphTargetTransfer.md), and [Editor FBX Morph Import](Docs/EditorFbxMorphImport.md).
 
 ## Design principles
 
