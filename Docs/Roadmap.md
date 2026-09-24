@@ -8,13 +8,15 @@
 - automated tests for mapping data
 
 ## Phase 2 — Daz integration
-- Genesis 8 skeleton profile
-- Genesis 8.1 skeleton profile
-- Genesis 9 skeleton profile
-- morph metadata import
-- texture/material metadata handoff
-- reference-pose normalization
-- twist-bone conversion
+- [x] Genesis 8 skeleton profile foundation
+- [x] Genesis 8.1 source-aware profile foundation
+- [x] Genesis 9 skeleton profile foundation
+- [x] generation detection and validation report
+- [x] preserve twist bones as deformation data
+- [ ] reference-pose normalization
+- [ ] twist rotation/distribution solver
+- [ ] morph metadata import
+- [ ] texture/material metadata handoff
 
 ## Phase 3 — Unreal retargeting
 - IK Rig generation helpers
