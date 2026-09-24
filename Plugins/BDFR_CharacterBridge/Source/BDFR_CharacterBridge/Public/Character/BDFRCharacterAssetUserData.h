@@ -30,4 +30,16 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BDFR|Morph")
     FBDFRMorphTransferPlan MorphTransferPlan;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BDFR|Retarget")
+    FSoftObjectPath GeneratedSourceIKRig;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BDFR|Retarget")
+    FSoftObjectPath GeneratedTargetIKRig;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BDFR|Retarget")
+    FSoftObjectPath GeneratedIKRetargeter;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BDFR|Retarget")
+    FName GeneratedTargetRetargetPose = NAME_None;
 };

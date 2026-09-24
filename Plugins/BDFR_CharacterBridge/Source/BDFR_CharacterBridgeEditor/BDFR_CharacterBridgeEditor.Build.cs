@@ -20,7 +20,9 @@ public class BDFR_CharacterBridgeEditor : ModuleRules
             new string[]
             {
                 "AssetTools",
-                "UnrealEd"
+                "UnrealEd",
+                "IKRig",
+                "IKRigEditor"
             }
         );
     }

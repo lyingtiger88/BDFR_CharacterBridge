@@ -117,7 +117,8 @@ BDFR_CharacterBridge
     +-- FBX Character Importer
     +-- Morph Validation
     +-- Character Import Wizard      [planned]
-    +-- Retarget Asset Generator     [planned]
+    +-- IK Rig / Retargeter Generator
+    +-- Retarget Pose Generator
 ```
 
 More detail: [Architecture](Docs/Architecture.md)
@@ -189,14 +190,17 @@ BDFR_CharacterBridge/
 - [x] non-destructive reference-pose conversion plan
 - [x] component-space pose direction analysis
 - [ ] twist rotation/distribution solver
-- [ ] generated IK Rig / IK Retargeter assets
+- [x] generated IK Rig / IK Retargeter assets
+- [x] generated target Retarget Pose
 
 ### v0.3 — Animation pipeline
 - [ ] animation transfer
 - [ ] root motion
-- [ ] IK Rig generation
-- [ ] IK Retargeter profile
-- [ ] pose correction
+- [x] IK Rig generation
+- [x] IK Retargeter generation
+- [x] UE 5.8 ChainToChain pose alignment
+- [ ] batch animation retargeting
+- [ ] locomotion validation
 
 ### v0.4 — Morph & facial pipeline
 - [x] Daz morph manifest / DTU parsing
@@ -215,7 +219,7 @@ BDFR_CharacterBridge/
 - [ ] StrandFX integration
 - [ ] runtime character hooks
 
-See the full [Roadmap](Docs/Roadmap.md), [Morph Target Transfer](Docs/MorphTargetTransfer.md), and [Editor FBX Morph Import](Docs/EditorFbxMorphImport.md).
+See the full [Roadmap](Docs/Roadmap.md), [Morph Target Transfer](Docs/MorphTargetTransfer.md), [Editor FBX Morph Import](Docs/EditorFbxMorphImport.md), and [IK Rig / Retargeter Generation](Docs/IKRigRetargeterGeneration.md).
 
 ## Design principles
 
