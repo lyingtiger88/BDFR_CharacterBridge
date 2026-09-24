@@ -1,0 +1,19 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "0.1.0",
+  "FriendlyName": "BDFR Character Bridge",
+  "Description": "Extensible character import, skeleton conversion, animation transfer and facial mapping framework for Unreal Engine 5.8+.",
+  "Category": "BDFR|Characters",
+  "CreatedBy": "BDFR",
+  "CanContainContent": true,
+  "IsBetaVersion": true,
+  "Installed": false,
+  "Modules": [
+    {
+      "Name": "BDFR_CharacterBridge",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    }
+  ]
+}
