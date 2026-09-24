@@ -50,7 +50,8 @@ Daz Studio / Blender / Custom FBX / MetaHuman-compatible assets
 ### Character import
 - Skeletal mesh import pipeline
 - Source-profile detection
-- Morph-target preservation
+- Morph-target preservation and Daz morph manifest
+- JCM / joint-driven morph metadata preservation
 - Character metadata and validation
 - Extensible adapter interface for multiple DCC sources
 
@@ -191,9 +192,12 @@ BDFR_CharacterBridge/
 - [ ] IK Retargeter profile
 - [ ] pose correction
 
-### v0.4 — Facial pipeline
-- [ ] facial morph registry
-- [ ] expression transfer
+### v0.4 — Morph & facial pipeline
+- [x] Daz morph manifest / DTU parsing
+- [x] morph-name normalization and semantic classification
+- [x] JCM JointLinks metadata preservation
+- [ ] editor-side FBX morph import integration
+- [ ] facial expression transfer mapping
 - [ ] ARKit mapping
 - [ ] facial validation
 
@@ -204,7 +208,7 @@ BDFR_CharacterBridge/
 - [ ] StrandFX integration
 - [ ] runtime character hooks
 
-See the full [Roadmap](Docs/Roadmap.md).
+See the full [Roadmap](Docs/Roadmap.md) and [Morph Target Transfer](Docs/MorphTargetTransfer.md).
 
 ## Design principles
 

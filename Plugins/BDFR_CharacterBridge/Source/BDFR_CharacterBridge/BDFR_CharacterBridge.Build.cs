@@ -14,5 +14,12 @@ public class BDFR_CharacterBridge : ModuleRules
                 "Engine"
             }
         );
+
+        PrivateDependencyModuleNames.AddRange(
+            new string[]
+            {
+                "Json"
+            }
+        );
     }
 }

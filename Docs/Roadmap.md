@@ -17,7 +17,9 @@
 - [x] component-space pose direction analysis
 - [ ] editor preview / IK Retarget Pose generation
 - [ ] twist rotation/distribution solver
-- [ ] morph metadata import
+- [x] morph metadata / DTU manifest parsing
+- [x] JCM JointLinks metadata preservation
+- [ ] editor-side FBX morph-target import integration
 - [ ] texture/material metadata handoff
 
 ## Phase 3 — Unreal retargeting
@@ -27,12 +29,15 @@
 - animation sequence transfer
 - common-pose validation suite
 
-## Phase 4 — Facial transfer
-- facial morph registry
-- expression semantic mapping
-- ARKit-compatible mapping profile
-- facial animation import
-- validation tools
+## Phase 4 — Morph and facial transfer
+- [x] Daz morph manifest and name normalization
+- [x] semantic morph classification
+- [x] joint-driven corrective metadata
+- [ ] editor-side FBX morph import integration
+- [ ] facial expression semantic mapping
+- [ ] ARKit-compatible mapping profile
+- [ ] facial animation import
+- [ ] validation tools
 
 ## Phase 5 — Additional sources
 - generic FBX source profile
