@@ -131,7 +131,7 @@ The bridge does not assume that a Daz skeleton should simply be renamed into an 
 7. validate shoulders, elbows, wrists, hips, knees and feet
 8. preserve source-specific corrective data when required
 
-See [Skeleton Conversion](Docs/SkeletonConversion.md) and the implemented [Daz Skeleton Adapter](Docs/DazSkeletonAdapter.md).
+See [Skeleton Conversion](Docs/SkeletonConversion.md), the implemented [Daz Skeleton Adapter](Docs/DazSkeletonAdapter.md), and [Reference Pose Conversion](Docs/ReferencePoseConversion.md).
 
 ## Unreal Engine 5.8 direction
 
@@ -179,7 +179,8 @@ BDFR_CharacterBridge/
 - [x] Genesis 9 profile foundation
 - [x] generation detection and validation report
 - [x] non-destructive twist-bone preservation policy
-- [ ] reference-pose conversion
+- [x] non-destructive reference-pose conversion plan
+- [x] component-space pose direction analysis
 - [ ] twist rotation/distribution solver
 - [ ] generated IK Rig / IK Retargeter assets
 

@@ -13,7 +13,9 @@
 - [x] Genesis 9 skeleton profile foundation
 - [x] generation detection and validation report
 - [x] preserve twist bones as deformation data
-- [ ] reference-pose normalization
+- [x] non-destructive reference-pose conversion plan
+- [x] component-space pose direction analysis
+- [ ] editor preview / IK Retarget Pose generation
 - [ ] twist rotation/distribution solver
 - [ ] morph metadata import
 - [ ] texture/material metadata handoff

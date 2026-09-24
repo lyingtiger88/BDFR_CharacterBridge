@@ -64,3 +64,12 @@ The validation report should expose unresolved mappings and suspicious transform
 ## Non-goals
 
 The first skeleton-conversion implementation is not intended to physically simulate muscles or soft tissue. Those systems belong to downstream deformation/runtime modules and should consume the normalized character output.
+
+
+## Implemented reference-pose planning
+
+The runtime foundation now includes `FBDFRReferencePoseConverter`, which captures Unreal raw reference poses and builds a non-destructive conversion plan between the Daz source profile and a canonical target skeleton.
+
+The plan records local reference-rotation deltas, component-space limb direction differences, root translation delta, missing mappings, and angular error metrics.
+
+See [Reference Pose Conversion](ReferencePoseConversion.md).
