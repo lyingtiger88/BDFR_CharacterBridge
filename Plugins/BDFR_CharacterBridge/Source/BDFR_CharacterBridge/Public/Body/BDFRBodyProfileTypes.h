@@ -23,6 +23,32 @@ enum class EBDFRBodySide : uint8
     Right
 };
 
+UENUM(BlueprintType)
+enum class EBDFRBodyAnimationClipType : uint8
+{
+    Walk,
+    Run,
+    Custom
+};
+
+USTRUCT(BlueprintType)
+struct FBDFRBodyAnimationClip
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BDFR|Body")
+    FName Name = NAME_None;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BDFR|Body")
+    EBDFRBodyAnimationClipType Type = EBDFRBodyAnimationClipType::Custom;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BDFR|Body")
+    FString SourceFile;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BDFR|Body")
+    bool bLoop = true;
+};
+
 USTRUCT(BlueprintType)
 struct FBDFRBodyRegion
 {
@@ -108,6 +134,9 @@ struct FBDFRBodyProfile
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BDFR|Body")
     FString CharacterLabel;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BDFR|Body")
+    TArray<FBDFRBodyAnimationClip> AnimationClips;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BDFR|Body")
     TArray<FBDFRBodyRegion> Regions;

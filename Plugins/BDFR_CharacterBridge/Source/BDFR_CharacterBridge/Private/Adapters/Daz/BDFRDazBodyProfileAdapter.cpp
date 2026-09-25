@@ -97,6 +97,16 @@ EBDFRBodySide FBDFRDazBodyProfileAdapter::ParseBodySide(
     return EBDFRBodySide::Center;
 }
 
+EBDFRBodyAnimationClipType FBDFRDazBodyProfileAdapter::ParseAnimationClipType(
+    const FString& Value)
+{
+    if (Value.Equals(TEXT("Walk"), ESearchCase::IgnoreCase))
+        return EBDFRBodyAnimationClipType::Walk;
+    if (Value.Equals(TEXT("Run"), ESearchCase::IgnoreCase))
+        return EBDFRBodyAnimationClipType::Run;
+    return EBDFRBodyAnimationClipType::Custom;
+}
+
 bool FBDFRDazBodyProfileAdapter::ParseBodyProfileJson(
     const FString& JsonText,
     FBDFRBodyProfile& OutProfile,
@@ -133,6 +143,37 @@ bool FBDFRDazBodyProfileAdapter::ParseBodyProfileJson(
         GetString(Root, TEXT("characterName"));
     OutProfile.CharacterLabel =
         GetString(Root, TEXT("characterLabel"));
+
+    const TArray<TSharedPtr<FJsonValue>>* AnimationClips = nullptr;
+    if (Root->TryGetArrayField(TEXT("animationClips"), AnimationClips) &&
+        AnimationClips)
+    {
+        for (const TSharedPtr<FJsonValue>& ClipValue : *AnimationClips)
+        {
+            const TSharedPtr<FJsonObject> ClipObject =
+                ClipValue->AsObject();
+
+            if (!ClipObject.IsValid())
+            {
+                continue;
+            }
+
+            FBDFRBodyAnimationClip Clip;
+            Clip.Name =
+                FName(*GetString(ClipObject, TEXT("name")));
+            Clip.Type =
+                ParseAnimationClipType(
+                    GetString(ClipObject, TEXT("type"), TEXT("Custom")));
+            Clip.SourceFile =
+                GetString(ClipObject, TEXT("sourceFile"));
+
+            bool bLoop = true;
+            ClipObject->TryGetBoolField(TEXT("loop"), bLoop);
+            Clip.bLoop = bLoop;
+
+            OutProfile.AnimationClips.Add(Clip);
+        }
+    }
 
     const TArray<TSharedPtr<FJsonValue>>* Regions = nullptr;
     if (!Root->TryGetArrayField(TEXT("regions"), Regions) || !Regions)

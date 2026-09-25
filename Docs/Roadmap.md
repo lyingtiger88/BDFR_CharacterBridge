@@ -64,6 +64,10 @@
 - [x] muscle dual-anchor metadata
 - [x] physical parameter metadata (mass, stiffness, damping, compliance, bulge)
 - [x] .bdfrbody.json sidecar schema
+- [x] Daz Walk / Run test-clip slots
+- [x] animation clip Add / Remove / Apply / Play-Pause controls
+- [x] animation clip metadata export
+- [x] Unreal body-profile animation-clip parser
 - [x] Unreal body-profile parser
 - [x] automatic sidecar discovery beside DTU
 - [x] skeleton anchor validation

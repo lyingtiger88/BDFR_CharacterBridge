@@ -54,6 +54,8 @@ Daz Studio / Blender / Custom FBX / MetaHuman-compatible assets
 - Daz morph manifest persisted on the imported Skeletal Mesh
 - JCM / joint-driven morph metadata preservation
 - Daz-authored muscle / soft-tissue body profiles
+- Walk / Run / custom Daz animation test-clip manager
+- Add / Remove / Apply / Play-Pause clip controls
 - automatic .bdfrbody.json sidecar discovery
 - Character metadata and validation
 - Extensible adapter interface for multiple DCC sources
@@ -221,6 +223,9 @@ BDFR_CharacterBridge/
 ### v0.5 — Body simulation bridge
 - [x] Daz muscle / soft-tissue authoring markers
 - [x] .bdfrbody.json export
+- [x] Walk / Run test-clip presets and Add/Remove controls
+- [x] Daz preset application and playback preview
+- [x] body-profile animation-clip metadata transfer
 - [x] automatic CharacterBridge body-profile import
 - [x] anchor validation against imported skeleton
 - [ ] Daz-to-Unreal body-marker coordinate conversion

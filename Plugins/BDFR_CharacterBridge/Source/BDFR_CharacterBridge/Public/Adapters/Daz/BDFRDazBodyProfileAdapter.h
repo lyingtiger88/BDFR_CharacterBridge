@@ -12,4 +12,5 @@ struct FBDFRDazBodyProfileAdapter
 
     static EBDFRBodyRegionType ParseRegionType(const FString& Value);
     static EBDFRBodySide ParseBodySide(const FString& Value);
+    static EBDFRBodyAnimationClipType ParseAnimationClipType(const FString& Value);
 };

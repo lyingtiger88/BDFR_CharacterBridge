@@ -1,27 +1,35 @@
 // BDFR_CharacterBridge - Daz Studio Body Authoring Tool
-// Creates non-rendering muscle / soft-tissue region markers and exports
-// a .bdfrbody.json sidecar consumed by BDFR_CharacterBridge in Unreal.
+// Creates non-rendering muscle / soft-tissue region markers, manages test
+// animation clips (Walk / Run / custom), and exports a .bdfrbody.json sidecar
+// consumed by BDFR_CharacterBridge in Unreal.
 //
 // Workflow:
 // 1) Select one bone/node for Soft Tissue, or up to two bones for Muscle.
 // 2) Run script -> Create Region.
 // 3) Move/rotate the created BDFR marker in Daz as needed.
-// 4) Run script -> Export Body Profile.
-// 5) Keep the .bdfrbody.json beside the FBX/DTU export.
-//
-// The marker is parented in-place to Anchor A, so its local transform is a
-// stable authoring-space transform relative to the selected Daz node.
+// 4) Assign Walk / Run animation presets or add custom test clips.
+// 5) Preview clips while checking the authored regions.
+// 6) Export Body Profile.
+// 7) Keep the .bdfrbody.json beside the FBX/DTU export.
 
 (function(){
 
     var TITLE = "BDFR Body Authoring";
     var PROP_PATH = "BDFR/Body Authoring";
+    var ROOT_NODE_NAME = "BDFR_BodyAuthoringRoot";
+    var CLIPS_PROP_NAME = "BDFR_AnimationClipsJson";
 
     function safeName(s) {
         s = String(s || "Region");
         s = s.replace(/[^A-Za-z0-9_\-]/g, "_");
         s = s.replace(/_+/g, "_");
         return s;
+    }
+
+    function baseName(path) {
+        var p = String(path || "").replace(/\\/g, "/");
+        var slash = p.lastIndexOf("/");
+        return slash >= 0 ? p.substring(slash + 1) : p;
     }
 
     function addStringProp(node, name, label, value) {
@@ -110,6 +118,327 @@
             }
         }
         return out;
+    }
+
+    function getAuthoringRoot(createIfMissing) {
+        var nodes = Scene.getNodeList();
+        for (var i = 0; i < nodes.length; i += 1) {
+            if (nodes[i].name == ROOT_NODE_NAME) {
+                return nodes[i];
+            }
+        }
+
+        if (!createIfMissing) {
+            return null;
+        }
+
+        var root = new DzNode();
+        root.setName(ROOT_NODE_NAME);
+        root.setLabel("BDFR Body Authoring Data");
+        root.setVisibleInRender(false);
+        Scene.addNode(root);
+
+        addBoolProp(root, "BDFR_IsAuthoringRoot", "BDFR Authoring Root", true);
+        addStringProp(root, CLIPS_PROP_NAME, "Animation Test Clips", JSON.stringify([
+            { name: "Walk", type: "Walk", file: "", loop: true },
+            { name: "Run", type: "Run", file: "", loop: true }
+        ]));
+
+        return root;
+    }
+
+    function defaultClips() {
+        return [
+            { name: "Walk", type: "Walk", file: "", loop: true },
+            { name: "Run", type: "Run", file: "", loop: true }
+        ];
+    }
+
+    function getAnimationClips() {
+        var root = getAuthoringRoot(true);
+        var p = prop(root, CLIPS_PROP_NAME);
+
+        if (!p) {
+            p = addStringProp(
+                root,
+                CLIPS_PROP_NAME,
+                "Animation Test Clips",
+                JSON.stringify(defaultClips())
+            );
+        }
+
+        var raw = String(p.getValue() || "");
+        if (raw.isEmpty()) {
+            return defaultClips();
+        }
+
+        try {
+            var parsed = JSON.parse(raw);
+            if (parsed && parsed.length !== undefined) {
+                return parsed;
+            }
+        } catch (e) {
+            App.writeToLog("BDFR: Could not parse stored animation clip metadata: " + e);
+        }
+
+        return defaultClips();
+    }
+
+    function saveAnimationClips(clips) {
+        var root = getAuthoringRoot(true);
+        var p = prop(root, CLIPS_PROP_NAME);
+
+        if (!p) {
+            p = addStringProp(root, CLIPS_PROP_NAME, "Animation Test Clips", "[]");
+        }
+
+        p.setValue(JSON.stringify(clips));
+        Scene.markChanged();
+    }
+
+    function formatClip(clip) {
+        var assigned = clip.file && !String(clip.file).isEmpty()
+            ? baseName(clip.file)
+            : "<not assigned>";
+
+        return "[" + clip.type + "] " + clip.name + "  -  " + assigned;
+    }
+
+    function refreshClipList(listBox, clips, preferredIndex) {
+        listBox.clear();
+
+        for (var i = 0; i < clips.length; i += 1) {
+            listBox.insertItem(formatClip(clips[i]));
+        }
+
+        if (clips.length > 0) {
+            var index = preferredIndex;
+            if (index === undefined || index < 0 || index >= clips.length) {
+                index = 0;
+            }
+            listBox.currentItem = index;
+            listBox.setSelected(index, true);
+        }
+    }
+
+    function chooseAnimationFile(currentPath) {
+        var startPath = currentPath && !String(currentPath).isEmpty()
+            ? currentPath
+            : App.getLoadSavePath();
+
+        return FileDialog.doFileDialog(
+            true,
+            "Choose Daz Animation / Pose Preset",
+            startPath,
+            "Daz Animation / Pose (*.duf *.dsf *.dsa *.bvh);;All Files (*)"
+        );
+    }
+
+    function addAnimationClipDialog(clips) {
+        var dlg = new DzBasicDialog();
+        dlg.caption = TITLE + " - Add Animation Clip";
+
+        var lblType = new DzLabel(dlg);
+        lblType.text = "Clip Type";
+        dlg.addWidget(lblType);
+
+        var typeCombo = new DzComboBox(dlg);
+        typeCombo.addItems(["Walk", "Run", "Custom"]);
+        dlg.addWidget(typeCombo);
+
+        var lblName = new DzLabel(dlg);
+        lblName.text = "Clip Name";
+        dlg.addWidget(lblName);
+
+        var nameEdit = new DzLineEdit(dlg);
+        nameEdit.text = "CustomClip_" + (clips.length + 1);
+        dlg.addWidget(nameEdit);
+
+        var lblFile = new DzLabel(dlg);
+        lblFile.text = "Animation / Pose Preset File";
+        dlg.addWidget(lblFile);
+
+        var fileEdit = new DzLineEdit(dlg);
+        fileEdit.readOnly = true;
+        fileEdit.placeholderText = "Choose .duf / .dsf / .dsa / .bvh";
+        dlg.addWidget(fileEdit);
+
+        var browseBtn = new DzPushButton(dlg);
+        browseBtn.text = "Browse...";
+        dlg.addWidget(browseBtn);
+
+        browseBtn.clicked.connect(dlg, function(){
+            var path = chooseAnimationFile(fileEdit.text);
+            if (path && !path.isEmpty()) {
+                fileEdit.text = path;
+            }
+        });
+
+        var loopCheck = new DzCheckBox(dlg);
+        loopCheck.text = "Loop during preview";
+        loopCheck.checked = true;
+        dlg.addWidget(loopCheck);
+
+        if (!dlg.exec()) {
+            return -1;
+        }
+
+        var clipType = typeCombo.currentText;
+        var clipName = String(nameEdit.text || clipType);
+        var filePath = String(fileEdit.text || "");
+
+        var clip = {
+            name: clipName,
+            type: clipType,
+            file: filePath,
+            loop: Boolean(loopCheck.checked)
+        };
+
+        // Replace the initial unassigned Walk/Run slot instead of creating
+        // a duplicate when the user assigns those defaults for the first time.
+        if (clipType == "Walk" || clipType == "Run") {
+            for (var i = 0; i < clips.length; i += 1) {
+                if (clips[i].type == clipType &&
+                    (!clips[i].file || String(clips[i].file).isEmpty())) {
+                    clips[i] = clip;
+                    saveAnimationClips(clips);
+                    return i;
+                }
+            }
+        }
+
+        clips.push(clip);
+        saveAnimationClips(clips);
+        return clips.length - 1;
+    }
+
+    function removeAnimationClip(clips, index) {
+        if (index < 0 || index >= clips.length) {
+            return -1;
+        }
+
+        var clipName = clips[index].name;
+        var answer = MessageBox.question(
+            "Remove animation clip '" + clipName + "'?",
+            TITLE,
+            "&Remove",
+            "&Cancel"
+        );
+
+        if (answer != 0) {
+            return index;
+        }
+
+        clips.splice(index, 1);
+        saveAnimationClips(clips);
+
+        if (clips.length < 1) {
+            return -1;
+        }
+
+        return Math.min(index, clips.length - 1);
+    }
+
+    function resolvePreviewFigure() {
+        var selected = Scene.getPrimarySelection();
+
+        if (!selected) {
+            return null;
+        }
+
+        var isRegion = prop(selected, "BDFR_IsBodyRegion");
+        if (isRegion && isRegion.getBoolValue()) {
+            var anchor = prop(selected, "BDFR_AnchorA");
+            if (anchor && anchor.getValue()) {
+                selected = anchor.getValue();
+            }
+        }
+
+        if (selected.name == ROOT_NODE_NAME) {
+            return null;
+        }
+
+        return topParent(selected);
+    }
+
+    function applyAnimationClip(clip) {
+        if (!clip) {
+            return false;
+        }
+
+        if (!clip.file || String(clip.file).isEmpty()) {
+            MessageBox.warning(
+                "No animation file is assigned to '" + clip.name + "'.\n\nUse Add Clip and choose a preset file. If this is the default Walk/Run slot, adding the same type will replace it.",
+                TITLE,
+                "&OK"
+            );
+            return false;
+        }
+
+        var fileInfo = new DzFileInfo(String(clip.file));
+        if (!fileInfo.exists()) {
+            MessageBox.warning(
+                "Animation file does not exist:\n" + clip.file,
+                TITLE,
+                "&OK"
+            );
+            fileInfo.deleteLater();
+            return false;
+        }
+        fileInfo.deleteLater();
+
+        var figure = resolvePreviewFigure();
+        if (!figure) {
+            MessageBox.warning(
+                "Select the character, one of its bones, or a BDFR region marker before applying a test clip.",
+                TITLE,
+                "&OK"
+            );
+            return false;
+        }
+
+        Scene.pause();
+        Scene.selectAllNodes(false);
+        figure.select(true);
+        Scene.setPrimarySelection(figure);
+
+        var contentMgr = App.getContentMgr();
+        if (!contentMgr) {
+            MessageBox.critical("Daz Content Manager is unavailable.", TITLE, "&OK");
+            return false;
+        }
+
+        var loaded = contentMgr.openFile(String(clip.file), true);
+        if (!loaded) {
+            MessageBox.warning(
+                "Daz could not apply the animation preset:\n" + clip.file,
+                TITLE,
+                "&OK"
+            );
+            return false;
+        }
+
+        Scene.loopPlayback(Boolean(clip.loop));
+        Scene.setFrame(0);
+        Scene.update();
+
+        return true;
+    }
+
+    function playPauseClip(clip) {
+        if (Scene.isPlaying()) {
+            Scene.pause();
+            return;
+        }
+
+        if (clip && clip.file && !String(clip.file).isEmpty()) {
+            if (!applyAnimationClip(clip)) {
+                return;
+            }
+        }
+
+        Scene.loopPlayback(clip ? Boolean(clip.loop) : true);
+        Scene.play(true);
     }
 
     function createRegionDialog(selectedNodes) {
@@ -220,8 +549,6 @@
         marker.setWSPos(markerPos);
         marker.setVisibleInRender(false);
 
-        // Parent in-place so the marker's local transform becomes authoring
-        // metadata relative to Anchor A.
         anchorA.addNodeChild(marker, true);
 
         addBoolProp(marker, "BDFR_IsBodyRegion", "BDFR Body Region", true);
@@ -249,7 +576,7 @@
         Scene.setPrimarySelection(marker);
 
         MessageBox.information(
-            "BDFR region marker created.\n\nMove/rotate the marker with Daz transform tools, then export the body profile when authoring is complete.",
+            "BDFR region marker created.\n\nMove/rotate the marker with Daz transform tools, then use Walk/Run test clips to inspect its placement during motion.",
             TITLE, "&OK");
     }
 
@@ -307,13 +634,28 @@
             });
         }
 
+        var clips = getAnimationClips();
+        var exportedClips = [];
+
+        for (var clipIndex = 0; clipIndex < clips.length; clipIndex += 1) {
+            exportedClips.push({
+                name: String(clips[clipIndex].name || ("Clip_" + clipIndex)),
+                type: String(clips[clipIndex].type || "Custom"),
+                sourceFile: String(clips[clipIndex].file || ""),
+                loop: clips[clipIndex].loop === undefined
+                    ? true
+                    : Boolean(clips[clipIndex].loop)
+            });
+        }
+
         var profile = {
             schema: "BDFR.BodyProfile",
-            version: 1,
+            version: 2,
             units: "cm",
             coordinateSystem: "DazStudio",
             characterName: characterRoot ? characterRoot.name : "",
             characterLabel: characterRoot ? characterRoot.getLabel() : "",
+            animationClips: exportedClips,
             regions: regions
         };
 
@@ -354,30 +696,93 @@
         fi.deleteLater();
 
         MessageBox.information(
-            "Exported " + regions.length + " BDFR body region(s):\n" + filePath +
+            "Exported " + regions.length + " BDFR body region(s) and " +
+            exportedClips.length + " animation test clip(s):\n" + filePath +
             "\n\nPlace this file beside the FBX/DTU. CharacterBridge can auto-detect it during import.",
             TITLE, "&OK");
     }
 
     function mainDialog() {
+        var clips = getAnimationClips();
+
         var dlg = new DzBasicDialog();
         dlg.caption = TITLE;
 
         var info = new DzLabel(dlg);
         info.text =
             "Author muscle and soft-tissue regions for Unreal.\n" +
-            "Create Region: select 1 node (soft tissue) or 2 nodes (muscle anchors).\n" +
-            "Export Profile: writes .bdfrbody.json for CharacterBridge.";
+            "Use Walk/Run test clips to inspect placement while the character moves.";
         dlg.addWidget(info);
+
+        var actionLabel = new DzLabel(dlg);
+        actionLabel.text = "Body Authoring";
+        dlg.addWidget(actionLabel);
 
         var actionCombo = new DzComboBox(dlg);
         actionCombo.addItem("Create Region");
         actionCombo.addItem("Export Body Profile");
         dlg.addWidget(actionCombo);
 
+        var clipsLabel = new DzLabel(dlg);
+        clipsLabel.text = "Animation Test Clips";
+        dlg.addWidget(clipsLabel);
+
+        var clipList = new DzListBox(dlg);
+        clipList.selectionMode = DzListBox.Single;
+        dlg.addWidget(clipList);
+
+        refreshClipList(clipList, clips, 0);
+
+        var addBtn = new DzPushButton(dlg);
+        addBtn.text = "Add Clip";
+        dlg.addWidget(addBtn);
+
+        var removeBtn = new DzPushButton(dlg);
+        removeBtn.text = "Remove Clip";
+        dlg.addWidget(removeBtn);
+
+        var applyBtn = new DzPushButton(dlg);
+        applyBtn.text = "Apply Selected Clip";
+        dlg.addWidget(applyBtn);
+
+        var playPauseBtn = new DzPushButton(dlg);
+        playPauseBtn.text = "Play / Pause Preview";
+        dlg.addWidget(playPauseBtn);
+
+        addBtn.clicked.connect(dlg, function(){
+            var newIndex = addAnimationClipDialog(clips);
+            if (newIndex >= 0) {
+                refreshClipList(clipList, clips, newIndex);
+            }
+        });
+
+        removeBtn.clicked.connect(dlg, function(){
+            var index = clipList.currentItem;
+            var nextIndex = removeAnimationClip(clips, index);
+            refreshClipList(clipList, clips, nextIndex);
+        });
+
+        applyBtn.clicked.connect(dlg, function(){
+            var index = clipList.currentItem;
+            if (index >= 0 && index < clips.length) {
+                applyAnimationClip(clips[index]);
+            }
+        });
+
+        playPauseBtn.clicked.connect(dlg, function(){
+            var index = clipList.currentItem;
+            var clip = (index >= 0 && index < clips.length)
+                ? clips[index]
+                : null;
+            playPauseClip(clip);
+        });
+
         if (!dlg.exec()) {
+            Scene.pause();
             return;
         }
+
+        Scene.pause();
 
         if (actionCombo.currentItem == 0) {
             createRegionDialog(Scene.getSelectedNodeList());
