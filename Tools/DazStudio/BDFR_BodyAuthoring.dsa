@@ -1,0 +1,382 @@
+// BDFR_CharacterBridge - Daz Studio Body Authoring Tool
+// Creates non-rendering muscle / soft-tissue region markers and exports
+// a .bdfrbody.json sidecar consumed by BDFR_CharacterBridge in Unreal.
+//
+// Workflow:
+// 1) Select one bone/node for Soft Tissue, or up to two bones for Muscle.
+// 2) Run script -> Create Region.
+// 3) Move/rotate the created BDFR marker in Daz as needed.
+// 4) Run script -> Export Body Profile.
+// 5) Keep the .bdfrbody.json beside the FBX/DTU export.
+//
+// The marker is parented in-place to Anchor A, so its local transform is a
+// stable authoring-space transform relative to the selected Daz node.
+
+(function(){
+
+    var TITLE = "BDFR Body Authoring";
+    var PROP_PATH = "BDFR/Body Authoring";
+
+    function safeName(s) {
+        s = String(s || "Region");
+        s = s.replace(/[^A-Za-z0-9_\-]/g, "_");
+        s = s.replace(/_+/g, "_");
+        return s;
+    }
+
+    function addStringProp(node, name, label, value) {
+        var p = new DzStringProperty(name, true);
+        p.setLabel(label);
+        p.setPath(PROP_PATH);
+        p.setValue(String(value));
+        node.addProperty(p);
+        return p;
+    }
+
+    function addFloatProp(node, name, label, value, minVal, maxVal) {
+        var p = new DzFloatProperty(name, false, true, Number(value));
+        p.setLabel(label);
+        p.setPath(PROP_PATH);
+        p.setMinMax(Number(minVal), Number(maxVal));
+        p.setSensitivity(0.01);
+        p.setValue(Number(value));
+        node.addProperty(p);
+        return p;
+    }
+
+    function addBoolProp(node, name, label, value) {
+        var p = new DzBoolProperty(name, false, true, Boolean(value));
+        p.setLabel(label);
+        p.setPath(PROP_PATH);
+        p.setBoolValue(Boolean(value));
+        node.addProperty(p);
+        return p;
+    }
+
+    function addNodeProp(node, name, label, target) {
+        var p = new DzNodeProperty(name, false, true);
+        p.setLabel(label);
+        p.setPath(PROP_PATH);
+        if (target) {
+            p.setValue(target);
+        }
+        node.addProperty(p);
+        return p;
+    }
+
+    function prop(node, name) {
+        return node ? node.findProperty(name) : null;
+    }
+
+    function stringProp(node, name, fallback) {
+        var p = prop(node, name);
+        return p ? String(p.getValue()) : String(fallback || "");
+    }
+
+    function floatProp(node, name, fallback) {
+        var p = prop(node, name);
+        return p ? Number(p.getValue()) : Number(fallback || 0);
+    }
+
+    function boolProp(node, name, fallback) {
+        var p = prop(node, name);
+        return p ? Boolean(p.getBoolValue()) : Boolean(fallback);
+    }
+
+    function vec3(v) {
+        return [ Number(v.x), Number(v.y), Number(v.z) ];
+    }
+
+    function quat(q) {
+        return [ Number(q.x), Number(q.y), Number(q.z), Number(q.w) ];
+    }
+
+    function topParent(node) {
+        var n = node;
+        while (n && n.getNodeParent()) {
+            n = n.getNodeParent();
+        }
+        return n;
+    }
+
+    function getBDFRMarkers() {
+        var out = [];
+        var nodes = Scene.getNodeList();
+        for (var i = 0; i < nodes.length; i += 1) {
+            var n = nodes[i];
+            var flag = prop(n, "BDFR_IsBodyRegion");
+            if (flag && flag.getBoolValue()) {
+                out.push(n);
+            }
+        }
+        return out;
+    }
+
+    function createRegionDialog(selectedNodes) {
+        if (!selectedNodes || selectedNodes.length < 1) {
+            MessageBox.warning(
+                "Select at least one bone or node first.\n\nFor a muscle, selecting two bones records Anchor A and Anchor B.",
+                TITLE, "&OK");
+            return;
+        }
+
+        var dlg = new DzBasicDialog();
+        dlg.caption = TITLE + " - Create Region";
+
+        var lblSelection = new DzLabel(dlg);
+        lblSelection.text = "Selected: " + selectedNodes.length + " node(s)";
+        dlg.addWidget(lblSelection);
+
+        var lblType = new DzLabel(dlg);
+        lblType.text = "Region Type";
+        dlg.addWidget(lblType);
+
+        var typeCombo = new DzComboBox(dlg);
+        typeCombo.addItems([
+            "Muscle",
+            "SoftTissue",
+            "FatPad",
+            "Breast",
+            "Glute",
+            "Abdomen",
+            "Custom"
+        ]);
+        dlg.addWidget(typeCombo);
+
+        var lblSide = new DzLabel(dlg);
+        lblSide.text = "Side";
+        dlg.addWidget(lblSide);
+
+        var sideCombo = new DzComboBox(dlg);
+        sideCombo.addItems(["Center", "Left", "Right"]);
+        dlg.addWidget(sideCombo);
+
+        var lblName = new DzLabel(dlg);
+        lblName.text = "Region Name";
+        dlg.addWidget(lblName);
+
+        var nameEdit = new DzLineEdit(dlg);
+        nameEdit.text = "Region_" + (getBDFRMarkers().length + 1);
+        dlg.addWidget(nameEdit);
+
+        function addNumberField(label, value, minVal, maxVal) {
+            var l = new DzLabel(dlg);
+            l.text = label;
+            dlg.addWidget(l);
+            var e = new DzLineEdit(dlg);
+            e.text = String(value);
+            e.setDoubleValidator(minVal, maxVal, 4, false);
+            dlg.addWidget(e);
+            return e;
+        }
+
+        var radiusX = addNumberField("Radius X (cm)", 5.0, 0.01, 1000.0);
+        var radiusY = addNumberField("Radius Y (cm)", 5.0, 0.01, 1000.0);
+        var radiusZ = addNumberField("Radius Z (cm)", 5.0, 0.01, 1000.0);
+        var massKg = addNumberField("Mass (kg)", 0.25, 0.0, 1000.0);
+        var stiffness = addNumberField("Stiffness", 0.65, 0.0, 100.0);
+        var damping = addNumberField("Damping", 0.35, 0.0, 100.0);
+        var compliance = addNumberField("Compliance", 0.25, 0.0, 100.0);
+        var activation = addNumberField("Activation Scale", 1.0, 0.0, 10.0);
+        var maxBulge = addNumberField("Max Bulge", 0.12, 0.0, 10.0);
+        var collisionScale = addNumberField("Collision Scale", 1.0, 0.01, 10.0);
+
+        if (!dlg.exec()) {
+            return;
+        }
+
+        var anchorA = selectedNodes[0];
+        var anchorB = selectedNodes.length > 1 ? selectedNodes[1] : null;
+
+        var marker = new DzNode();
+        var regionName = safeName(nameEdit.text);
+        var markerName = "BDFR_" + safeName(typeCombo.currentText) + "_" + regionName + "_" + Scene.getNumNodes();
+
+        marker.setName(markerName);
+        marker.setLabel("BDFR " + typeCombo.currentText + " - " + nameEdit.text);
+        Scene.addNode(marker);
+
+        var posA = anchorA.getWSPos();
+        var markerPos = new DzVec3(posA.x, posA.y, posA.z);
+
+        if (anchorB) {
+            var posB = anchorB.getWSPos();
+            markerPos = new DzVec3(
+                (posA.x + posB.x) * 0.5,
+                (posA.y + posB.y) * 0.5,
+                (posA.z + posB.z) * 0.5
+            );
+        }
+
+        marker.setWSPos(markerPos);
+        marker.setVisibleInRender(false);
+
+        // Parent in-place so the marker's local transform becomes authoring
+        // metadata relative to Anchor A.
+        anchorA.addNodeChild(marker, true);
+
+        addBoolProp(marker, "BDFR_IsBodyRegion", "BDFR Body Region", true);
+        addStringProp(marker, "BDFR_RegionType", "Region Type", typeCombo.currentText);
+        addStringProp(marker, "BDFR_RegionName", "Region Name", nameEdit.text);
+        addStringProp(marker, "BDFR_Side", "Side", sideCombo.currentText);
+        addNodeProp(marker, "BDFR_AnchorA", "Anchor A", anchorA);
+        addNodeProp(marker, "BDFR_AnchorB", "Anchor B", anchorB);
+        addStringProp(marker, "BDFR_AnchorAName", "Anchor A Name", anchorA.name);
+        addStringProp(marker, "BDFR_AnchorBName", "Anchor B Name", anchorB ? anchorB.name : "");
+
+        addFloatProp(marker, "BDFR_RadiusX", "Radius X (cm)", Number(radiusX.text), 0.01, 1000.0);
+        addFloatProp(marker, "BDFR_RadiusY", "Radius Y (cm)", Number(radiusY.text), 0.01, 1000.0);
+        addFloatProp(marker, "BDFR_RadiusZ", "Radius Z (cm)", Number(radiusZ.text), 0.01, 1000.0);
+        addFloatProp(marker, "BDFR_MassKg", "Mass (kg)", Number(massKg.text), 0.0, 1000.0);
+        addFloatProp(marker, "BDFR_Stiffness", "Stiffness", Number(stiffness.text), 0.0, 100.0);
+        addFloatProp(marker, "BDFR_Damping", "Damping", Number(damping.text), 0.0, 100.0);
+        addFloatProp(marker, "BDFR_Compliance", "Compliance", Number(compliance.text), 0.0, 100.0);
+        addFloatProp(marker, "BDFR_ActivationScale", "Activation Scale", Number(activation.text), 0.0, 10.0);
+        addFloatProp(marker, "BDFR_MaxBulge", "Max Bulge", Number(maxBulge.text), 0.0, 10.0);
+        addFloatProp(marker, "BDFR_CollisionScale", "Collision Scale", Number(collisionScale.text), 0.01, 10.0);
+
+        Scene.selectAllNodes(false);
+        marker.select(true);
+        Scene.setPrimarySelection(marker);
+
+        MessageBox.information(
+            "BDFR region marker created.\n\nMove/rotate the marker with Daz transform tools, then export the body profile when authoring is complete.",
+            TITLE, "&OK");
+    }
+
+    function exportProfile() {
+        var markers = getBDFRMarkers();
+        if (markers.length < 1) {
+            MessageBox.warning("No BDFR body region markers were found in the scene.", TITLE, "&OK");
+            return;
+        }
+
+        var regions = [];
+        var characterRoot = null;
+
+        for (var i = 0; i < markers.length; i += 1) {
+            var marker = markers[i];
+            var anchorAProp = prop(marker, "BDFR_AnchorA");
+            var anchorBProp = prop(marker, "BDFR_AnchorB");
+            var anchorA = anchorAProp ? anchorAProp.getValue() : null;
+            var anchorB = anchorBProp ? anchorBProp.getValue() : null;
+
+            if (!characterRoot && anchorA) {
+                characterRoot = topParent(anchorA);
+            }
+
+            var localPos = marker.getLocalPos();
+            var localRot = marker.getLocalRot();
+            var worldPos = marker.getWSPos();
+            var worldRot = marker.getWSRot();
+
+            regions.push({
+                id: marker.name,
+                label: marker.getLabel(),
+                name: stringProp(marker, "BDFR_RegionName", marker.getLabel()),
+                type: stringProp(marker, "BDFR_RegionType", "Custom"),
+                side: stringProp(marker, "BDFR_Side", "Center"),
+                anchorA: anchorA ? anchorA.name : stringProp(marker, "BDFR_AnchorAName", ""),
+                anchorB: anchorB ? anchorB.name : stringProp(marker, "BDFR_AnchorBName", ""),
+                localPosition: vec3(localPos),
+                localRotation: quat(localRot),
+                worldPosition: vec3(worldPos),
+                worldRotation: quat(worldRot),
+                radiusCm: [
+                    floatProp(marker, "BDFR_RadiusX", 5.0),
+                    floatProp(marker, "BDFR_RadiusY", 5.0),
+                    floatProp(marker, "BDFR_RadiusZ", 5.0)
+                ],
+                massKg: floatProp(marker, "BDFR_MassKg", 0.25),
+                stiffness: floatProp(marker, "BDFR_Stiffness", 0.65),
+                damping: floatProp(marker, "BDFR_Damping", 0.35),
+                compliance: floatProp(marker, "BDFR_Compliance", 0.25),
+                activationScale: floatProp(marker, "BDFR_ActivationScale", 1.0),
+                maxBulge: floatProp(marker, "BDFR_MaxBulge", 0.12),
+                collisionScale: floatProp(marker, "BDFR_CollisionScale", 1.0),
+                enabled: true
+            });
+        }
+
+        var profile = {
+            schema: "BDFR.BodyProfile",
+            version: 1,
+            units: "cm",
+            coordinateSystem: "DazStudio",
+            characterName: characterRoot ? characterRoot.name : "",
+            characterLabel: characterRoot ? characterRoot.getLabel() : "",
+            regions: regions
+        };
+
+        var startPath = App.getLoadSavePath();
+        var filePath = FileDialog.doFileDialog(
+            false,
+            "Export BDFR Body Profile",
+            startPath,
+            "BDFR Body Profile (*.bdfrbody.json)"
+        );
+
+        if (filePath.isEmpty()) {
+            return;
+        }
+
+        if (!filePath.toLowerCase().endsWith(".bdfrbody.json")) {
+            filePath += ".bdfrbody.json";
+        }
+
+        var f = new DzFile(filePath);
+        if (!f.open(DzFile.WriteOnly | DzFile.Truncate)) {
+            MessageBox.critical("Could not open file for writing:\n" + filePath, TITLE, "&OK");
+            f.deleteLater();
+            return;
+        }
+
+        var jsonText = JSON.stringify(profile, null, 2);
+        if (typeof(f.writeUtf8) == "function") {
+            f.writeUtf8(jsonText);
+        } else {
+            f.write(jsonText);
+        }
+        f.close();
+        f.deleteLater();
+
+        var fi = new DzFileInfo(filePath);
+        App.setLoadSavePath(fi.path());
+        fi.deleteLater();
+
+        MessageBox.information(
+            "Exported " + regions.length + " BDFR body region(s):\n" + filePath +
+            "\n\nPlace this file beside the FBX/DTU. CharacterBridge can auto-detect it during import.",
+            TITLE, "&OK");
+    }
+
+    function mainDialog() {
+        var dlg = new DzBasicDialog();
+        dlg.caption = TITLE;
+
+        var info = new DzLabel(dlg);
+        info.text =
+            "Author muscle and soft-tissue regions for Unreal.\n" +
+            "Create Region: select 1 node (soft tissue) or 2 nodes (muscle anchors).\n" +
+            "Export Profile: writes .bdfrbody.json for CharacterBridge.";
+        dlg.addWidget(info);
+
+        var actionCombo = new DzComboBox(dlg);
+        actionCombo.addItem("Create Region");
+        actionCombo.addItem("Export Body Profile");
+        dlg.addWidget(actionCombo);
+
+        if (!dlg.exec()) {
+            return;
+        }
+
+        if (actionCombo.currentItem == 0) {
+            createRegionDialog(Scene.getSelectedNodeList());
+        } else {
+            exportProfile();
+        }
+    }
+
+    mainDialog();
+
+})();

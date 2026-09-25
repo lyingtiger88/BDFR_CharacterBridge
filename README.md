@@ -53,6 +53,8 @@ Daz Studio / Blender / Custom FBX / MetaHuman-compatible assets
 - Automatic Unreal Morph Target import
 - Daz morph manifest persisted on the imported Skeletal Mesh
 - JCM / joint-driven morph metadata preservation
+- Daz-authored muscle / soft-tissue body profiles
+- automatic .bdfrbody.json sidecar discovery
 - Character metadata and validation
 - Extensible adapter interface for multiple DCC sources
 
@@ -93,6 +95,7 @@ BDFR_CharacterBridge
 |
 +-- Import
 |   +-- Daz Adapter
+|   +-- Daz Body Profile Adapter
 |   +-- FBX Adapter
 |   +-- Blender Adapter          [planned]
 |   +-- MetaHuman Adapter       [planned]
@@ -112,6 +115,9 @@ BDFR_CharacterBridge
 |   +-- Morph Registry
 |   +-- Expression Mapping
 |   +-- ARKit Mapping
+|
++-- Daz Tools
+|   +-- Body Authoring Script
 |
 +-- Editor
     +-- FBX Character Importer
@@ -212,14 +218,24 @@ BDFR_CharacterBridge/
 - [ ] ARKit mapping
 - [ ] facial validation
 
-### v0.5 — Extended ecosystem
+### v0.5 — Body simulation bridge
+- [x] Daz muscle / soft-tissue authoring markers
+- [x] .bdfrbody.json export
+- [x] automatic CharacterBridge body-profile import
+- [x] anchor validation against imported skeleton
+- [ ] Daz-to-Unreal body-marker coordinate conversion
+- [ ] DynamicBodySystem region instantiation
+- [ ] muscle activation binding
+- [ ] soft-tissue solver binding
+
+### v0.6 — Extended ecosystem
 - [ ] Blender adapter
 - [ ] MetaHuman interoperability
 - [ ] DynamicBodySystem integration
 - [ ] StrandFX integration
 - [ ] runtime character hooks
 
-See the full [Roadmap](Docs/Roadmap.md), [Morph Target Transfer](Docs/MorphTargetTransfer.md), [Editor FBX Morph Import](Docs/EditorFbxMorphImport.md), and [IK Rig / Retargeter Generation](Docs/IKRigRetargeterGeneration.md).
+See the full [Roadmap](Docs/Roadmap.md), [Morph Target Transfer](Docs/MorphTargetTransfer.md), [Editor FBX Morph Import](Docs/EditorFbxMorphImport.md), [IK Rig / Retargeter Generation](Docs/IKRigRetargeterGeneration.md), and [Daz Body Authoring](Docs/DazBodyAuthoring.md).
 
 ## Design principles
 

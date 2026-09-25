@@ -56,3 +56,19 @@
 - StrandFX hooks
 - runtime AI/emotion interfaces
 - advanced deformation integration
+
+
+## Phase 7 — Daz body authoring / DynamicBody bridge
+- [x] Daz Studio muscle and soft-tissue region authoring script
+- [x] bone-anchored non-rendering region markers
+- [x] muscle dual-anchor metadata
+- [x] physical parameter metadata (mass, stiffness, damping, compliance, bulge)
+- [x] .bdfrbody.json sidecar schema
+- [x] Unreal body-profile parser
+- [x] automatic sidecar discovery beside DTU
+- [x] skeleton anchor validation
+- [x] persistent body profile on Skeletal Mesh AssetUserData
+- [ ] Daz-to-Unreal marker coordinate conversion using actual FBX import orientation
+- [ ] DynamicBodySystem region/component generation
+- [ ] muscle contraction/activation driver binding
+- [ ] soft-tissue collision and solver profile generation

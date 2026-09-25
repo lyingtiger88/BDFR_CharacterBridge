@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/AssetUserData.h"
+#include "Body/BDFRBodyProfileTypes.h"
 #include "Morph/BDFRMorphTypes.h"
 #include "Skeleton/BDFRSkeletonTypes.h"
 #include "BDFRCharacterAssetUserData.generated.h"
@@ -30,6 +31,15 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BDFR|Morph")
     FBDFRMorphTransferPlan MorphTransferPlan;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BDFR|Body")
+    FString SourceBodyProfileFile;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BDFR|Body")
+    bool bHasBodyProfile = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BDFR|Body")
+    FBDFRBodyProfile BodyProfile;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BDFR|Retarget")
     FSoftObjectPath GeneratedSourceIKRig;

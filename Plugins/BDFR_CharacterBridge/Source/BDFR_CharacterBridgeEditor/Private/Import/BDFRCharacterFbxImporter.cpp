@@ -1,5 +1,6 @@
 #include "Import/BDFRCharacterFbxImporter.h"
 
+#include "Adapters/Daz/BDFRDazBodyProfileAdapter.h"
 #include "Adapters/Daz/BDFRDazMorphAdapter.h"
 #include "AssetImportTask.h"
 #include "AssetToolsModule.h"
@@ -174,10 +175,55 @@ FBDFRCharacterFbxImportResult FBDFRCharacterFbxImporter::ImportCharacter(
         }
     }
 
+    Result.ResolvedBodyProfileFilename =
+        ResolveBodyProfileFilename(Request);
+
+    if (!Result.ResolvedBodyProfileFilename.IsEmpty())
+    {
+        FString BodyJson;
+
+        if (FFileHelper::LoadFileToString(
+                BodyJson,
+                *Result.ResolvedBodyProfileFilename))
+        {
+            TArray<FString> BodyWarnings;
+
+            if (FBDFRDazBodyProfileAdapter::ParseBodyProfileJson(
+                    BodyJson,
+                    Result.BodyProfile,
+                    &BodyWarnings))
+            {
+                Result.bHasBodyProfile =
+                    Result.BodyProfile.IsUsable();
+
+                Result.Warnings.Append(BodyWarnings);
+
+                ValidateBodyProfileAnchors(
+                    Result.SkeletalMesh,
+                    Result.BodyProfile,
+                    Result.Warnings);
+            }
+            else
+            {
+                Result.Warnings.Add(FString::Printf(
+                    TEXT("BDFR body profile could not be parsed: %s"),
+                    *Result.ResolvedBodyProfileFilename));
+            }
+        }
+        else
+        {
+            Result.Warnings.Add(FString::Printf(
+                TEXT("BDFR body profile could not be read: %s"),
+                *Result.ResolvedBodyProfileFilename));
+        }
+    }
+
     AttachOrUpdateAssetUserData(
         Result.SkeletalMesh,
         Request,
-        Result.MorphTransferPlan);
+        Result.MorphTransferPlan,
+        Result.bHasBodyProfile ? &Result.BodyProfile : nullptr,
+        Result.ResolvedBodyProfileFilename);
 
     Result.SkeletalMesh->MarkPackageDirty();
 
@@ -210,10 +256,73 @@ TArray<FName> FBDFRCharacterFbxImporter::CollectImportedMorphNames(
     return MorphNames;
 }
 
+FString FBDFRCharacterFbxImporter::ResolveBodyProfileFilename(
+    const FBDFRCharacterFbxImportRequest& Request)
+{
+    if (!Request.BodyProfileFilename.IsEmpty())
+    {
+        return IFileManager::Get().FileExists(*Request.BodyProfileFilename)
+            ? FPaths::ConvertRelativePathToFull(Request.BodyProfileFilename)
+            : FString();
+    }
+
+    if (!Request.bAutoDetectBodyProfile ||
+        Request.DtuFilename.IsEmpty())
+    {
+        return FString();
+    }
+
+    const FString Candidate =
+        FPaths::ChangeExtension(
+            Request.DtuFilename,
+            TEXT("bdfrbody.json"));
+
+    return IFileManager::Get().FileExists(*Candidate)
+        ? FPaths::ConvertRelativePathToFull(Candidate)
+        : FString();
+}
+
+void FBDFRCharacterFbxImporter::ValidateBodyProfileAnchors(
+    const USkeletalMesh* SkeletalMesh,
+    const FBDFRBodyProfile& BodyProfile,
+    TArray<FString>& OutWarnings)
+{
+    if (!SkeletalMesh)
+    {
+        return;
+    }
+
+    const FReferenceSkeleton& RefSkeleton =
+        SkeletalMesh->GetRefSkeleton();
+
+    for (const FBDFRBodyRegion& Region : BodyProfile.Regions)
+    {
+        if (Region.AnchorA != NAME_None &&
+            RefSkeleton.FindRawBoneIndex(Region.AnchorA) == INDEX_NONE)
+        {
+            OutWarnings.Add(FString::Printf(
+                TEXT("Body region '%s' Anchor A '%s' was not found in the imported skeleton."),
+                *Region.Name.ToString(),
+                *Region.AnchorA.ToString()));
+        }
+
+        if (Region.AnchorB != NAME_None &&
+            RefSkeleton.FindRawBoneIndex(Region.AnchorB) == INDEX_NONE)
+        {
+            OutWarnings.Add(FString::Printf(
+                TEXT("Body region '%s' Anchor B '%s' was not found in the imported skeleton."),
+                *Region.Name.ToString(),
+                *Region.AnchorB.ToString()));
+        }
+    }
+}
+
 void FBDFRCharacterFbxImporter::AttachOrUpdateAssetUserData(
     USkeletalMesh* SkeletalMesh,
     const FBDFRCharacterFbxImportRequest& Request,
-    const FBDFRMorphTransferPlan& MorphTransferPlan)
+    const FBDFRMorphTransferPlan& MorphTransferPlan,
+    const FBDFRBodyProfile* BodyProfile,
+    const FString& BodyProfileFilename)
 {
     if (!SkeletalMesh)
     {
@@ -238,7 +347,20 @@ void FBDFRCharacterFbxImporter::AttachOrUpdateAssetUserData(
     }
 
     UserData->Modify();
-    UserData->SourceFbxFile = FPaths::ConvertRelativePathToFull(Request.FbxFilename);
-    UserData->SourceDtuFile = FPaths::ConvertRelativePathToFull(Request.DtuFilename);
+    UserData->SourceFbxFile =
+        FPaths::ConvertRelativePathToFull(Request.FbxFilename);
+    UserData->SourceDtuFile =
+        FPaths::ConvertRelativePathToFull(Request.DtuFilename);
     UserData->MorphTransferPlan = MorphTransferPlan;
+
+    UserData->SourceBodyProfileFile =
+        BodyProfileFilename;
+
+    UserData->bHasBodyProfile =
+        BodyProfile != nullptr;
+
+    UserData->BodyProfile =
+        BodyProfile
+            ? *BodyProfile
+            : FBDFRBodyProfile();
 }
