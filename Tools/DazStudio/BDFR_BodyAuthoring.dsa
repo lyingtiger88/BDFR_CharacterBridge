@@ -185,8 +185,17 @@
             return;
         }
 
-        var anchorA = selectedNodes[0];
-        var anchorB = selectedNodes.length > 1 ? selectedNodes[1] : null;
+        var anchorA = Scene.getPrimarySelection() || selectedNodes[0];
+        var anchorB = null;
+
+        if (selectedNodes.length > 1) {
+            for (var selectedIndex = 0; selectedIndex < selectedNodes.length; selectedIndex += 1) {
+                if (selectedNodes[selectedIndex] != anchorA) {
+                    anchorB = selectedNodes[selectedIndex];
+                    break;
+                }
+            }
+        }
 
         var marker = new DzNode();
         var regionName = safeName(nameEdit.text);
@@ -320,7 +329,7 @@
             return;
         }
 
-        if (!filePath.toLowerCase().endsWith(".bdfrbody.json")) {
+        if (filePath.toLowerCase().right(14) != ".bdfrbody.json") {
             filePath += ".bdfrbody.json";
         }
 
