@@ -769,7 +769,7 @@
             }
         });
 
-        playPauseBtn.clicked.connect(dlg, function(){
+        playPauseBtn["clicked()"].connect(dlg, function(){
             var index = clipList.currentItem;
             var clip = (index >= 0 && index < clips.length)
                 ? clips[index]
