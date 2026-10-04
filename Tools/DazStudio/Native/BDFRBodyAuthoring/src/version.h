@@ -1,0 +1,5 @@
+#pragma once
+#define BDFR_BODY_PLUGIN_MAJOR 0
+#define BDFR_BODY_PLUGIN_MINOR 5
+#define BDFR_BODY_PLUGIN_REV 0
+#define BDFR_BODY_PLUGIN_BUILD 1
