@@ -1,0 +1,13 @@
+// BDFR Body Authoring native-plugin launcher.
+// Install/build the native bdfrbodyauthoring plugin first.
+(function(){
+    var action = MainWindow.getActionMgr().findAction("BDFR_BodyAuthoring_Action");
+    if (!action) {
+        MessageBox.warning(
+            "The native BDFR Body Authoring plugin is not loaded.\n\nBuild/install bdfrbodyauthoring and restart Daz Studio.",
+            "BDFR Body Authoring",
+            "&OK");
+        return;
+    }
+    action.trigger();
+})();
