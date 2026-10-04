@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="/BDFRBodyAuthoring">
+    <file>female_body_map.png</file>
+    <file>male_body_map.png</file>
+  </qresource>
+</RCC>
