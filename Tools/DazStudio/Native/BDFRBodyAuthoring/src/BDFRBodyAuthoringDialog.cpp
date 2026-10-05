@@ -28,6 +28,7 @@
 #include <QtGui/QTreeWidgetItem>
 #include <QtGui/QVBoxLayout>
 #include <QtCore/QFileInfo>
+#include <QtCore/QRegExp>
 
 #include <dzapp.h>
 #include <dzcontentmgr.h>
