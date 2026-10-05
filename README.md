@@ -232,14 +232,22 @@ BDFR_CharacterBridge/
 - [ ] facial validation
 
 ### v0.5 — Body simulation bridge
-- [x] Daz muscle / soft-tissue authoring markers
-- [x] .bdfrbody.json export
-- [x] Walk / Run test-clip presets and Add/Remove controls
-- [x] Daz preset application and playback preview
+- [x] Daz muscle / soft-tissue authoring foundation
+- [x] native Daz Studio C++ / Qt Body Authoring plugin source
+- [x] approved Female / Male body-map resources
+- [x] Genesis-style skeleton overlay + clickable anatomy presets
+- [x] responsive three-panel authoring UI source
+- [x] .bdfrbody.json v3 export
+- [x] Walk / Run / custom test-clip manager
+- [x] Daz Content Manager clip application + Timeline Play/Pause
 - [x] body-profile animation-clip metadata transfer
-- [x] automatic CharacterBridge body-profile import
+- [x] automatic CharacterBridge sidecar body-profile import
+- [x] embedded DTU BDFRBodyProfile parser
+- [x] Daz-side DTU extension writer helper
 - [x] anchor validation against imported skeleton
-- [ ] Daz-to-Unreal body-marker coordinate conversion
+- [x] Windows native build / validation / package scripts
+- [ ] compile native Daz DLL against local official Daz Studio SDK
+- [ ] Daz-to-Unreal 3D body-marker coordinate conversion
 - [ ] DynamicBodySystem region instantiation
 - [ ] muscle activation binding
 - [ ] soft-tissue solver binding
