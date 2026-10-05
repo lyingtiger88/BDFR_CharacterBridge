@@ -274,3 +274,5 @@ bool FBDFRDazEmbeddedDtuBodyProfileParseTest::RunTest(
 
     return true;
 }
+
+#endif
