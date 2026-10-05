@@ -3,6 +3,7 @@
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
+#include "Serialization/JsonWriter.h"
 
 namespace
 {
@@ -66,6 +67,20 @@ namespace
             Object->TryGetNumberField(Field, Value);
         }
         return static_cast<float>(Value);
+    }
+
+    FVector ReadRadius(const TSharedPtr<FJsonObject>& Object)
+    {
+        const FVector Legacy = ReadVec3(Object, TEXT("radiusCm"));
+        if (!Legacy.IsNearlyZero())
+        {
+            return Legacy;
+        }
+
+        return FVector(
+            GetFloat(Object, TEXT("radiusXcm"), 5.0f),
+            GetFloat(Object, TEXT("radiusYcm"), 5.0f),
+            GetFloat(Object, TEXT("radiusZcm"), 5.0f));
     }
 }
 
@@ -143,6 +158,10 @@ bool FBDFRDazBodyProfileAdapter::ParseBodyProfileJson(
         GetString(Root, TEXT("characterName"));
     OutProfile.CharacterLabel =
         GetString(Root, TEXT("characterLabel"));
+    OutProfile.Gender =
+        GetString(Root, TEXT("gender"));
+    OutProfile.GenesisProfile =
+        GetString(Root, TEXT("genesisProfile"));
 
     const TArray<TSharedPtr<FJsonValue>>* AnimationClips = nullptr;
     if (Root->TryGetArrayField(TEXT("animationClips"), AnimationClips) &&
@@ -212,8 +231,11 @@ bool FBDFRDazBodyProfileAdapter::ParseBodyProfileJson(
             ReadVec3(RegionObject, TEXT("worldPosition"));
         Region.SourceWorldRotation =
             ReadQuat(RegionObject, TEXT("worldRotation"));
+        Region.NormalizedBodyMapPosition = FVector2D(
+            GetFloat(RegionObject, TEXT("normalizedX"), -1.0f),
+            GetFloat(RegionObject, TEXT("normalizedY"), -1.0f));
         Region.RadiusCm =
-            ReadVec3(RegionObject, TEXT("radiusCm"));
+            ReadRadius(RegionObject);
 
         Region.MassKg =
             GetFloat(RegionObject, TEXT("massKg"), 0.25f);
@@ -245,4 +267,48 @@ bool FBDFRDazBodyProfileAdapter::ParseBodyProfileJson(
     }
 
     return true;
+}
+
+
+bool FBDFRDazBodyProfileAdapter::ParseDtuBodyProfileJson(
+    const FString& DtuJsonText,
+    FBDFRBodyProfile& OutProfile,
+    TArray<FString>* OutWarnings)
+{
+    OutProfile = FBDFRBodyProfile();
+
+    TSharedPtr<FJsonObject> DtuRoot;
+    const TSharedRef<TJsonReader<>> Reader =
+        TJsonReaderFactory<>::Create(DtuJsonText);
+
+    if (!FJsonSerializer::Deserialize(Reader, DtuRoot) || !DtuRoot.IsValid())
+    {
+        return false;
+    }
+
+    const TSharedPtr<FJsonObject>* EmbeddedProfile = nullptr;
+    if (!DtuRoot->TryGetObjectField(TEXT("BDFRBodyProfile"), EmbeddedProfile) ||
+        !EmbeddedProfile ||
+        !EmbeddedProfile->IsValid())
+    {
+        if (OutWarnings)
+        {
+            OutWarnings->Add(TEXT("DTU does not contain a BDFRBodyProfile member."));
+        }
+        return false;
+    }
+
+    FString EmbeddedJson;
+    const TSharedRef<TJsonWriter<>> Writer =
+        TJsonWriterFactory<>::Create(&EmbeddedJson);
+
+    if (!FJsonSerializer::Serialize(EmbeddedProfile->ToSharedRef(), Writer))
+    {
+        return false;
+    }
+
+    return ParseBodyProfileJson(
+        EmbeddedJson,
+        OutProfile,
+        OutWarnings);
 }
