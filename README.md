@@ -119,7 +119,8 @@ BDFR_CharacterBridge
 |   +-- ARKit Mapping
 |
 +-- Daz Tools
-|   +-- Body Authoring Script
+|   +-- Native Body Authoring Plugin
+|   +-- DazScript Launcher / QA
 |
 +-- Editor
     +-- FBX Character Importer
@@ -130,6 +131,16 @@ BDFR_CharacterBridge
 ```
 
 More detail: [Architecture](Docs/Architecture.md)
+
+### Native Daz Body Authoring
+
+The v0.5 body-authoring UI is being migrated from the early `.dsa` prototype to a native **Daz Studio C++ / Qt plugin** under:
+
+`Tools/DazStudio/Native/BDFRBodyAuthoring`
+
+The native milestone includes the approved three-panel authoring workflow, Female/Male body maps, Genesis-style skeleton overlays, clickable anatomical presets, region/physics inspector controls, Walk/Run clip management, timeline preview and JSON export. The DazScript version remains useful as a legacy prototype and automation reference.
+
+Build and packaging scripts are included for Windows. A DTU extension helper is also provided so a later DazToUnreal integration can embed `BDFRBodyProfile` directly in the DTU root object while preserving standalone `.bdfbody.json` support.
 
 ## Daz to Unreal skeleton strategy
 
