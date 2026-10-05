@@ -385,11 +385,57 @@ FBDFRRetargetAssetGenerator::Generate(
             TargetBones,
             Result.Warnings);
 
+    const int32 DefinedChainCount = Profile.RetargetChains.Num();
+    Result.ChainCoverage =
+        DefinedChainCount > 0
+            ? static_cast<float>(Result.ResolvedChains.Num()) /
+                static_cast<float>(DefinedChainCount)
+            : 0.0f;
+
+    const TArray<FName> CriticalChains =
+    {
+        FName(TEXT("Spine")),
+        FName(TEXT("LeftArm")),
+        FName(TEXT("RightArm")),
+        FName(TEXT("LeftLeg")),
+        FName(TEXT("RightLeg"))
+    };
+
+    for (const FName CriticalChain : CriticalChains)
+    {
+        const bool bResolved =
+            Result.ResolvedChains.ContainsByPredicate(
+                [CriticalChain](
+                    const FBDFRResolvedRetargetChain& Chain)
+                {
+                    return Chain.ChainName == CriticalChain;
+                });
+
+        if (!bResolved)
+        {
+            Result.MissingCriticalChains.Add(CriticalChain);
+        }
+    }
+
     if (Result.ResolvedChains.Num() == 0)
     {
         Result.Errors.Add(
             TEXT("No compatible source/target retarget chains were resolved."));
         return Result;
+    }
+
+    if (Result.MissingCriticalChains.Num() > 0)
+    {
+        TArray<FString> Names;
+        for (const FName Name : Result.MissingCriticalChains)
+        {
+            Names.Add(Name.ToString());
+        }
+
+        Result.Warnings.Add(FString::Printf(
+            TEXT("Retarget assets are partial (%.0f%% chain coverage). Missing critical chains: %s."),
+            Result.ChainCoverage * 100.0f,
+            *FString::Join(Names, TEXT(", "))));
     }
 
     const FString SourceIKRigName =
