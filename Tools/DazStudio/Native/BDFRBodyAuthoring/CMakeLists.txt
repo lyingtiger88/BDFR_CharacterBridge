@@ -67,6 +67,8 @@ set(BDFR_SOURCES
     src/BDFRBodyAuthoringDialog.h
     src/BDFRBodyProfile.cpp
     src/BDFRBodyProfile.h
+    src/BDFRDtuExtension.cpp
+    src/BDFRDtuExtension.h
     src/BDFRBodyViewer.cpp
     src/BDFRBodyViewer.h
     src/pluginmain.cpp
