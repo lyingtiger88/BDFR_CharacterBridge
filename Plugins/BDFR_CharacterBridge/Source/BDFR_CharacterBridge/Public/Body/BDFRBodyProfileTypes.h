@@ -88,6 +88,9 @@ struct FBDFRBodyRegion
     FQuat SourceWorldRotation = FQuat::Identity;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BDFR|Body")
+    FVector2D NormalizedBodyMapPosition = FVector2D(-1.0, -1.0);
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BDFR|Body")
     FVector RadiusCm = FVector(5.0, 5.0, 5.0);
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BDFR|Body")
@@ -134,6 +137,12 @@ struct FBDFRBodyProfile
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BDFR|Body")
     FString CharacterLabel;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BDFR|Body")
+    FString Gender;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BDFR|Body")
+    FString GenesisProfile;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BDFR|Body")
     TArray<FBDFRBodyAnimationClip> AnimationClips;
