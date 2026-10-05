@@ -72,6 +72,7 @@ private slots:
     void onXRayChanged(double value);
     void onAddClip();
     void onRemoveClip();
+    void onApplyClip();
     void onPlayPauseTimeline();
     void onExportProfile();
     void onHelp();
