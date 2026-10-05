@@ -58,6 +58,8 @@ struct FBDFRRetargetAssetGenerationResult
     FName TargetRetargetPoseName = NAME_None;
 
     TArray<FBDFRResolvedRetargetChain> ResolvedChains;
+    TArray<FName> MissingCriticalChains;
+    float ChainCoverage = 0.0f;
     TArray<FString> Warnings;
     TArray<FString> Errors;
 };
