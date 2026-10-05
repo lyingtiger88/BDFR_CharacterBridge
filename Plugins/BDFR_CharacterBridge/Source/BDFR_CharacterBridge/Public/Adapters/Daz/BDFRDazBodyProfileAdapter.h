@@ -10,6 +10,11 @@ struct FBDFRDazBodyProfileAdapter
         FBDFRBodyProfile& OutProfile,
         TArray<FString>* OutWarnings = nullptr);
 
+    static bool ParseDtuBodyProfileJson(
+        const FString& DtuJsonText,
+        FBDFRBodyProfile& OutProfile,
+        TArray<FString>* OutWarnings = nullptr);
+
     static EBDFRBodyRegionType ParseRegionType(const FString& Value);
     static EBDFRBodySide ParseBodySide(const FString& Value);
     static EBDFRBodyAnimationClipType ParseAnimationClipType(const FString& Value);
