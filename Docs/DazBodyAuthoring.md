@@ -2,6 +2,31 @@
 
 ## Goal
 
+## Native v0.5 implementation
+
+The production UI is now moving to a native Daz Studio C++/Qt plugin:
+
+`Tools/DazStudio/Native/BDFRBodyAuthoring`
+
+The original `Tools/DazStudio/BDFR_BodyAuthoring.dsa` remains in the repository as a legacy prototype / automation reference, but the approved professional UI is implemented natively so it can use proper responsive Qt layouts, body viewers, inspectors and reliable callbacks.
+
+Current native source milestone includes:
+
+- three-panel responsive editor
+- approved Female and Male front silhouettes
+- Genesis-style skeleton overlay
+- clickable anatomical hotspots
+- symmetry-aware region creation
+- selected-region physics inspector
+- Walk / Run / custom clip table
+- Daz Timeline Play/Pause
+- standalone `.bdfbody.json` writer
+- `BDFRDtuExtension::writeBodyProfile()` helper for future direct DazToUnreal DTU embedding
+- Windows build, validation and packaging scripts
+
+The native source must still be compiled locally against the official Daz Studio SDK before beta/stable binary release.
+
+
 The BDFR Daz Body Authoring Tool lets an artist place muscle and soft-tissue simulation regions in Daz Studio before the character is imported into Unreal.
 
 The goal is not to run the final soft-body solver inside Daz. Daz is used as an authoring environment because the artist can see the character, skeleton and proportions while placing the regions.
