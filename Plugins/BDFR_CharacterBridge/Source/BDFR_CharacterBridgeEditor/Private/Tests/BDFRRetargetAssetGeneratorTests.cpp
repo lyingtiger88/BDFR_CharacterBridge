@@ -103,4 +103,42 @@ bool FBDFRRetargetChainResolutionTest::RunTest(
     return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FBDFRRetargetChainCoverageTest,
+    "BDFR.CharacterBridge.Retarget.CriticalChainCoverage",
+    EAutomationTestFlags::EditorContext |
+    EAutomationTestFlags::EngineFilter)
+
+bool FBDFRRetargetChainCoverageTest::RunTest(
+    const FString& Parameters)
+{
+    const FBDFRSkeletonProfile Profile =
+        FBDFRDazSkeletonAdapter::BuildProfile(
+            EBDFRCharacterSourceProfile::DazGenesis8);
+
+    TArray<FBDFRResolvedRetargetChain> Resolved;
+    for (const FName ChainName :
+         {FName(TEXT("Spine")), FName(TEXT("LeftArm")), FName(TEXT("RightArm"))})
+    {
+        FBDFRResolvedRetargetChain Chain;
+        Chain.ChainName = ChainName;
+        Resolved.Add(Chain);
+    }
+
+    float Coverage = 0.0f;
+    TArray<FName> Missing;
+    FBDFRRetargetAssetGenerator::EvaluateChainCoverage(
+        Profile,
+        Resolved,
+        Coverage,
+        Missing);
+
+    TestTrue(TEXT("Coverage should be normalized"), Coverage > 0.0f && Coverage < 1.0f);
+    TestTrue(TEXT("Left leg should be reported missing"), Missing.Contains(FName(TEXT("LeftLeg"))));
+    TestTrue(TEXT("Right leg should be reported missing"), Missing.Contains(FName(TEXT("RightLeg"))));
+    TestFalse(TEXT("Resolved spine should not be missing"), Missing.Contains(FName(TEXT("Spine"))));
+    return true;
+}
+
+
 #endif
