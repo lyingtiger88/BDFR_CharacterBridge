@@ -322,6 +322,47 @@ FBDFRRetargetAssetGenerator::ResolveCompatibleChains(
     return ResolvedChains;
 }
 
+void FBDFRRetargetAssetGenerator::EvaluateChainCoverage(
+    const FBDFRSkeletonProfile& Profile,
+    const TArray<FBDFRResolvedRetargetChain>& ResolvedChains,
+    float& OutCoverage,
+    TArray<FName>& OutMissingCriticalChains)
+{
+    const int32 DefinedChainCount = Profile.RetargetChains.Num();
+    OutCoverage =
+        DefinedChainCount > 0
+            ? static_cast<float>(ResolvedChains.Num()) /
+                static_cast<float>(DefinedChainCount)
+            : 0.0f;
+
+    OutMissingCriticalChains.Reset();
+
+    static const TArray<FName> CriticalChains =
+    {
+        FName(TEXT("Spine")),
+        FName(TEXT("LeftArm")),
+        FName(TEXT("RightArm")),
+        FName(TEXT("LeftLeg")),
+        FName(TEXT("RightLeg"))
+    };
+
+    for (const FName CriticalChain : CriticalChains)
+    {
+        const bool bResolved =
+            ResolvedChains.ContainsByPredicate(
+                [CriticalChain](
+                    const FBDFRResolvedRetargetChain& Chain)
+                {
+                    return Chain.ChainName == CriticalChain;
+                });
+
+        if (!bResolved)
+        {
+            OutMissingCriticalChains.Add(CriticalChain);
+        }
+    }
+}
+
 FBDFRRetargetAssetGenerationResult
 FBDFRRetargetAssetGenerator::Generate(
     const FBDFRRetargetAssetGenerationRequest& Request)
@@ -385,37 +426,11 @@ FBDFRRetargetAssetGenerator::Generate(
             TargetBones,
             Result.Warnings);
 
-    const int32 DefinedChainCount = Profile.RetargetChains.Num();
-    Result.ChainCoverage =
-        DefinedChainCount > 0
-            ? static_cast<float>(Result.ResolvedChains.Num()) /
-                static_cast<float>(DefinedChainCount)
-            : 0.0f;
-
-    const TArray<FName> CriticalChains =
-    {
-        FName(TEXT("Spine")),
-        FName(TEXT("LeftArm")),
-        FName(TEXT("RightArm")),
-        FName(TEXT("LeftLeg")),
-        FName(TEXT("RightLeg"))
-    };
-
-    for (const FName CriticalChain : CriticalChains)
-    {
-        const bool bResolved =
-            Result.ResolvedChains.ContainsByPredicate(
-                [CriticalChain](
-                    const FBDFRResolvedRetargetChain& Chain)
-                {
-                    return Chain.ChainName == CriticalChain;
-                });
-
-        if (!bResolved)
-        {
-            Result.MissingCriticalChains.Add(CriticalChain);
-        }
-    }
+    EvaluateChainCoverage(
+        Profile,
+        Result.ResolvedChains,
+        Result.ChainCoverage,
+        Result.MissingCriticalChains);
 
     if (Result.ResolvedChains.Num() == 0)
     {
