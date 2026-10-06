@@ -82,6 +82,12 @@ struct FBDFRRetargetAssetGenerator
         const TArray<FName>& TargetBones,
         TArray<FString>& OutWarnings);
 
+    static void EvaluateChainCoverage(
+        const FBDFRSkeletonProfile& Profile,
+        const TArray<FBDFRResolvedRetargetChain>& ResolvedChains,
+        float& OutCoverage,
+        TArray<FName>& OutMissingCriticalChains);
+
 private:
     static TArray<FName> CollectRawBoneNames(const USkeletalMesh* Mesh);
 };
