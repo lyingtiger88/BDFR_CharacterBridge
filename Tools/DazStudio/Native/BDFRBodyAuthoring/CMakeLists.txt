@@ -62,10 +62,12 @@ set(QT_HEADERS_DIR "${DAZ_SDK_DIR}/include")
 set(QT_QTCORE_INCLUDE_DIR "${DAZ_SDK_DIR}/include/QtCore")
 if(WIN32)
     set(QT_QTCORE_LIBRARY_RELEASE "${DAZ_SDK_DIR}/lib/${DZ_MIXED_PLATFORM}/QtCore4.lib")
+    set(QT_QTGUI_LIBRARY_RELEASE "${DAZ_SDK_DIR}/lib/${DZ_MIXED_PLATFORM}/QtGui4.lib")
+    set(QT_QTSCRIPT_LIBRARY_RELEASE "${DAZ_SDK_DIR}/lib/${DZ_MIXED_PLATFORM}/QtScript4.lib")
 endif()
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/DUMMY_MKSPECS/default")
 set(QT_MKSPECS_DIR "${CMAKE_CURRENT_BINARY_DIR}/DUMMY_MKSPECS")
-find_package(Qt4 4.8.1 REQUIRED QtCore QtGui)
+find_package(Qt4 4.8.1 REQUIRED QtCore QtGui QtScript)
 
 if(WIN32)
     add_compile_options("/MD" "/U_DEBUG")
@@ -89,7 +91,7 @@ set(BDFR_SOURCES
 
 add_library(bdfrbodyauthoring SHARED ${BDFR_SOURCES})
 target_include_directories(bdfrbodyauthoring PRIVATE "${DZ_SDK_INCLUDE}" "${CMAKE_CURRENT_SOURCE_DIR}/src")
-target_link_libraries(bdfrbodyauthoring PRIVATE dzcore Qt4::QtCore Qt4::QtGui)
+target_link_libraries(bdfrbodyauthoring PRIVATE dzcore Qt4::QtCore Qt4::QtGui Qt4::QtScript)
 
 set_target_properties(bdfrbodyauthoring PROPERTIES
     PROJECT_LABEL "BDFR Body Authoring"
