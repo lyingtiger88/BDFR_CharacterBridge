@@ -42,6 +42,8 @@ $required = @(
     (Join-Path $DazSdkDir "include\\dzplugin.h"),
     (Join-Path $DazSdkDir "lib\\x64\\dzcore.lib"),
     (Join-Path $DazSdkDir "lib\\x64\\QtCore4.lib"),
+    (Join-Path $DazSdkDir "lib\\x64\\QtGui4.lib"),
+    (Join-Path $DazSdkDir "lib\\x64\\QtScript4.lib"),
     (Join-Path $DazSdkDir "bin\\x64\\qmake.exe")
 )
 foreach($item in $required){
