@@ -29,12 +29,23 @@ else()
     message(FATAL_ERROR "BDFR Body Authoring currently targets Windows and macOS Daz Studio builds.")
 endif()
 
+# Accept the official SDK root directly. The PowerShell build helper can also
+# resolve a nested SDK folder before invoking CMake.
 set(DZ_SDK_INCLUDE "${DAZ_SDK_DIR}/include")
 set(DAZ_SDK_CORE_RELATIVE_PATH "lib/${DZ_MIXED_PLATFORM}/${DZ_LIB_PREFIX}dzcore${DZ_LIB_SUFFIX}")
 set(DAZ_SDK_LIB "${DAZ_SDK_DIR}/${DAZ_SDK_CORE_RELATIVE_PATH}")
 
 if(NOT EXISTS "${DAZ_SDK_LIB}")
-    message(FATAL_ERROR "dzcore library was not found. Check DAZ_SDK_DIR: ${DAZ_SDK_LIB}")
+    message(STATUS "DAZ_SDK_DIR = ${DAZ_SDK_DIR}")
+    message(STATUS "Expected dzcore = ${DAZ_SDK_LIB}")
+    message(FATAL_ERROR
+        "Official DAZ Studio SDK root is invalid or incomplete. "
+        "Expected <SDK>/include/dzplugin.h and <SDK>/lib/x64/dzcore.lib. "
+        "Run Get-ChildItem -Recurse -Filter dzcore.lib to locate the real SDK root.")
+endif()
+
+if(NOT EXISTS "${DZ_SDK_INCLUDE}/dzplugin.h")
+    message(FATAL_ERROR "DAZ SDK headers were not found: ${DZ_SDK_INCLUDE}/dzplugin.h")
 endif()
 
 add_library(dzcore SHARED IMPORTED)
