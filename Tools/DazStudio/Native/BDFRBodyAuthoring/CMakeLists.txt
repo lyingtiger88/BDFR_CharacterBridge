@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.4.0)
+cmake_minimum_required(VERSION 3.10)
 project(BDFRBodyAuthoring)
 
 set(CMAKE_AUTOMOC ON)
@@ -94,13 +94,8 @@ target_link_libraries(bdfrbodyauthoring PRIVATE dzcore Qt4::QtCore Qt4::QtGui)
 set_target_properties(bdfrbodyauthoring PROPERTIES
     PROJECT_LABEL "BDFR Body Authoring"
     OUTPUT_NAME "bdfrbodyauthoring"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
-
-if(DAZ_STUDIO_EXE_DIR)
-    set_target_properties(bdfrbodyauthoring PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${DAZ_STUDIO_EXE_DIR}/plugins"
-        LIBRARY_OUTPUT_DIRECTORY "${DAZ_STUDIO_EXE_DIR}/plugins"
-    )
-endif()
 
 list(APPEND CMAKE_AUTOMOC_MOC_OPTIONS -i)
