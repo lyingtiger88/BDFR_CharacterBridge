@@ -1,7 +1,8 @@
 param(
     [Parameter(Mandatory=$true)][string]$DazSdkDir,
     [string]$DazStudioDir="C:\\Program Files\\DAZ 3D\\DAZStudio4",
-    [string]$BuildDir="build"
+    [string]$BuildDir="build",
+    [switch]$SkipInstall
 )
 
 $ErrorActionPreference="Stop"
@@ -52,16 +53,51 @@ foreach($item in $required){
 Write-Host "Using DAZ SDK: $DazSdkDir"
 Write-Host "Daz Studio: $DazStudioDir"
 
-cmake -S $root -B $build -A x64 -DDAZ_SDK_DIR="$DazSdkDir" -DDAZ_STUDIO_EXE_DIR="$DazStudioDir"
+cmake -S $root -B $build -A x64 -DDAZ_SDK_DIR="$DazSdkDir"
 if($LASTEXITCODE -ne 0){throw "CMake configure failed."}
 
 cmake --build $build --config Release
 if($LASTEXITCODE -ne 0){throw "Build failed."}
 
-$dll=Join-Path $DazStudioDir "plugins\\bdfrbodyauthoring.dll"
-if(Test-Path $dll){
-    Write-Host "SUCCESS: $dll"
+$builtDll = Get-ChildItem -Path $build -Recurse -Filter "bdfrbodyauthoring.dll" -File -ErrorAction SilentlyContinue |
+    Select-Object -First 1
+
+if(!$builtDll){
+    throw "Build reported success but bdfrbodyauthoring.dll was not found under: $build"
+}
+
+$stageRoot = Join-Path $root "dist\\BDFR_BodyAuthoring_Daz_v0.5.0"
+$stagePlugins = Join-Path $stageRoot "plugins"
+New-Item -ItemType Directory -Force -Path $stagePlugins | Out-Null
+$stagedDll = Join-Path $stagePlugins "bdfrbodyauthoring.dll"
+Copy-Item $builtDll.FullName $stagedDll -Force
+
+Write-Host ""
+Write-Host "BUILD SUCCESS"
+Write-Host "Built DLL: $($builtDll.FullName)"
+Write-Host "Staged DLL: $stagedDll"
+
+if($SkipInstall){
+    Write-Host "Install step skipped."
+    exit 0
+}
+
+$pluginDir = Join-Path $DazStudioDir "plugins"
+$installedDll = Join-Path $pluginDir "bdfrbodyauthoring.dll"
+
+try {
+    if(!(Test-Path $pluginDir)){
+        New-Item -ItemType Directory -Force -Path $pluginDir | Out-Null
+    }
+    Copy-Item $stagedDll $installedDll -Force
+    Write-Host "Installed DLL: $installedDll"
     Write-Host "Restart Daz Studio, then run BDFR_BodyAuthoring_Launcher.dsa."
-} else {
-    Write-Warning "Build completed but DLL was not found at $dll"
+}
+catch {
+    Write-Warning "The plugin built successfully, but Windows denied installation into Program Files."
+    Write-Host ""
+    Write-Host "Run PowerShell as Administrator and copy:"
+    Write-Host "  Copy-Item `"$stagedDll`" `"$installedDll`" -Force"
+    Write-Host ""
+    Write-Host "No rebuild is required."
 }
